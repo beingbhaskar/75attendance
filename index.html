@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>75% Attendance Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .result-box {
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg text-white">
+    <div class="container mx-auto px-4 py-12">
+        <div class="max-w-md mx-auto bg-white rounded-lg overflow-hidden result-box">
+            <div class="py-6 px-8 bg-indigo-700">
+                <h1 class="text-2xl font-bold text-center">75% Attendance Calculator</h1>
+                <p class="text-center text-indigo-200 mt-2">Calculate your safe bunk limit without breaking attendance rules!</p>
+            </div>
+            
+            <div class="p-8 bg-gray-50 text-gray-800">
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2" for="percentage">
+                        Percentage Required
+                    </label>
+                    <div class="relative">
+                        <input type="range" id="percentage" min="1" max="100" value="75" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <span id="percentageValue" class="absolute -top-8 left-0 bg-indigo-600 text-white px-2 py-1 rounded-md text-sm font-bold">75%</span>
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2" for="present">
+                            Present Days
+                        </label>
+                        <input type="number" id="present"  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2" for="total">
+                            Total Days<br>
+                            <span class="text-xs font-normal">(Including bunked days)</span>
+                        </label>
+                        <input type="number" id="total"  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                
+                <button id="calculateBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-md transition duration-200 animate-pulse">
+                    Calculate
+                </button>
+                
+                <div id="results" class="mt-8 hidden">
+                    <div class="bg-white border-l-4 border-indigo-500 p-4 mb-4 shadow-sm">
+                        <p id="resultText" class="font-bold"></p>
+                        <p id="currentAttendance" class="text-sm mt-1"></p>
+                        <p id="newAttendance" class="text-sm mt-1"></p>
+                    </div>
+                    
+                    <div class="text-center mt-6">
+                        <div class="inline-block bg-gray-100 rounded-full w-full h-4">
+                            <div id="progressBar" class="bg-green-500 h-4 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <p id="progressText" class="text-xs mt-2"></p>
+                    </div>
+                    
+                    <div id="chartContainer" class="mt-6 hidden">
+                        <div class="flex justify-between items-end h-40">
+                            <div class="flex flex-col items-center">
+                                <div class="bg-indigo-200 w-8 rounded-t-sm" id="currentBar"></div>
+                                <p class="text-xs mt-2">Current</p>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="bg-green-200 w-8 rounded-t-sm" id="goalBar"></div>
+                                <p class="text-xs mt-2">Goal</p>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="bg-red-200 w-8 rounded-t-sm" id="bunkBar"></div>
+                                <p class="text-xs mt-2">Possible Bunks</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="px-8 py-4 bg-gray-100 border-t border-gray-200 text-center">
+                <p class="text-xs text-gray-600">Start with your current attendance to see how many days you can bunk!</p>
+            </div>
+        </div>
+
+        <!-- 👇 Footer Line with Link -->
+        <div class="text-center mt-8 text-sm text-gray-300">
+            Made with ❤️ by 
+            <a href="https://www.linkedin.com/in/bhaskarkumar" target="_blank" class="text-white underline hover:text-indigo-200 font-semibold">
+                Bhaskar Kumar
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const percentageSlider = document.getElementById('percentage');
+            const percentageValue = document.getElementById('percentageValue');
+            const presentInput = document.getElementById('present');
+            const totalInput = document.getElementById('total');
+            const calculateBtn = document.getElementById('calculateBtn');
+            const resultsDiv = document.getElementById('results');
+            const resultText = document.getElementById('resultText');
+            const currentAttendance = document.getElementById('currentAttendance');
+            const newAttendance = document.getElementById('newAttendance');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const chartContainer = document.getElementById('chartContainer');
+            
+            percentageSlider.addEventListener('input', function() {
+                percentageValue.textContent = this.value + '%';
+                percentageValue.style.left = `calc(${(this.value - 1) / 99 * 100}% - 25px)`;
+            });
+            
+            calculateBtn.addEventListener('click', calculateAttendance);
+            
+            function calculateAttendance() {
+                const targetPercentage = parseInt(percentageSlider.value) / 100;
+                const present = parseInt(presentInput.value);
+                const total = parseInt(totalInput.value);
+                
+                if (isNaN(present) || isNaN(total) || present < 0 || total <= 0 || present > total) {
+                    alert('Please enter valid numbers (Present ≤ Total and both positive)');
+                    return;
+                }
+                
+                const currentPercent = present / total;
+                const currentDisplayPercent = (currentPercent * 100).toFixed(2);
+                
+                let bunkDays = 0;
+                if (currentPercent > targetPercentage) {
+                    bunkDays = calculateMaxBunkDays(present, total, targetPercentage);
+                    
+                    resultText.innerHTML = `You can bunk for <span class="text-green-600">${bunkDays}</span> more days while maintaining ${percentageSlider.value}% attendance.`;
+                    
+                    const newTotal = total + bunkDays;
+                    const newPercent = (present / newTotal * 100).toFixed(2);
+                    
+                    currentAttendance.textContent = `Current Attendance: ${present}/${total} → ${currentDisplayPercent}%`;
+                    newAttendance.textContent = `Attendance Then: ${present}/${newTotal} → ${newPercent}%`;
+                    
+                    progressBar.style.width = `${currentDisplayPercent}%`;
+                    progressBar.className = currentPercent >= targetPercentage ? 
+                        'bg-green-500 h-4 rounded-full' : 'bg-yellow-500 h-4 rounded-full';
+                    progressText.textContent = `Target: ${percentageSlider.value}%`;
+                    
+                    chartContainer.classList.remove('hidden');
+                    updateChart(present, total, bunkDays, currentPercent, targetPercentage);
+                } else {
+                    const requiredDays = Math.ceil((targetPercentage * total - present) / (1 - targetPercentage));
+                    
+                    if (requiredDays > 0) {
+                        resultText.innerHTML = `You need to attend <span class="text-indigo-600">${requiredDays}</span> more days to reach ${percentageSlider.value}% attendance.`;
+                        
+                        const newTotal = total + requiredDays;
+                        const newPresent = present + requiredDays;
+                        const newPercent = (newPresent / newTotal * 100).toFixed(2);
+                        
+                        currentAttendance.textContent = `Current Attendance: ${present}/${total} → ${currentDisplayPercent}%`;
+                        newAttendance.textContent = `Attendance Then: ${newPresent}/${newTotal} → ${newPercent}%`;
+                        
+                        progressBar.style.width = `${currentDisplayPercent}%`;
+                        progressBar.className = 'bg-red-500 h-4 rounded-full';
+                        progressText.textContent = `Target: ${percentageSlider.value}%`;
+                        
+                        chartContainer.classList.remove('hidden');
+                        updateChart(present, total, 0, currentPercent, targetPercentage, requiredDays);
+                    } else {
+                        resultText.innerHTML = `You're already meeting your ${percentageSlider.value}% attendance goal!`;
+                    }
+                }
+                
+                resultsDiv.classList.remove('hidden');
+            }
+            
+            function calculateMaxBunkDays(present, total, targetPercentage) {
+                const maxBunkDays = Math.floor((present / targetPercentage) - total);
+                return Math.max(0, maxBunkDays);
+            }
+            
+            function updateChart(present, total, bunkDays, currentPercent, targetPercent, requiredDays = 0) {
+                const currentBar = document.getElementById('currentBar');
+                const goalBar = document.getElementById('goalBar');
+                const bunkBar = document.getElementById('bunkBar');
+                
+                const currentHeight = currentPercent * 150;
+                const targetHeight = targetPercent * 150;
+                
+                currentBar.style.height = `${currentHeight}px`;
+                goalBar.style.height = `${targetHeight}px`;
+                
+                if (bunkDays > 0) {
+                    bunkBar.style.height = `${(bunkDays / (total + bunkDays)) * 150}px`;
+                } else if (requiredDays > 0) {
+                    bunkBar.style.height = `${(requiredDays / (total + requiredDays)) * 150}px`;
+                    bunkBar.className = 'bg-indigo-300 w-8 rounded-t-sm';
+                } else {
+                    bunkBar.style.height = '0px';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
